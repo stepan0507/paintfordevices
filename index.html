@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Paint</title>
+    <title>paint</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -12,14 +12,14 @@
         <div class="toolbar">
             <div class="tool-group">
                 <div class="tools">
-                    <button id="brush" class="active" title="Кисть"><i class="fas fa-paint-brush"></i></button>
-                    <button id="eraser" title="Ластик"><i class="fas fa-eraser"></i></button>
+                    <button id="brush" class="tool-btn active" title="Кисть (B)">🖌️</button>
+                    <button id="eraser" class="tool-btn" title="Ластик (E)">🧹</button>
                     <button id="line" title="Линия"><i class="fas fa-minus"></i></button>
                     <button id="rectangle" title="Прямоугольник"><i class="far fa-square"></i></button>
                     <button id="circle" title="Круг"><i class="far fa-circle"></i></button>
                     <button id="spray" title="Распылитель"><i class="fas fa-spray-can"></i></button>
-                    <button id="text" title="Текст"><i class="fas fa-font"></i></button>
-                    <button id="templates" title="Шаблоны"><i class="fas fa-shapes"></i></button>
+                    <button id="text" class="tool-btn" title="Текст (T)">📝</button>
+                    <button id="templates" class="tool-btn" title="Шаблоны (G)">🎨</button>
                     <button id="fill" title="Заливка"><i class="fas fa-fill-drip"></i></button>
                     <button id="select" title="Выделение"><i class="fas fa-crop"></i></button>
                     <button id="move" title="Перемещение"><i class="fas fa-arrows-alt"></i></button>
@@ -30,7 +30,7 @@
                 <input type="color" id="colorPicker" title="Выбрать цвет">
                 <div class="size-control">
                     <input type="range" id="brushSize" min="1" max="50" value="5" title="Размер кисти">
-                    <span id="sizeValue">5px</span>
+                    <span id="brushSizeValue">5px</span>
                 </div>
             </div>
 
@@ -54,24 +54,34 @@
                 </div>
             </div>
 
+            <div id="textSettings" class="text-settings hidden">
+                <div class="setting-group">
+                    <label for="fontSize">Размер шрифта:</label>
+                    <input type="range" id="fontSize" min="8" max="72" value="20" step="1">
+                    <span id="fontSizeValue">20px</span>
+                </div>
+            </div>
+
             <div id="templatesPanel" class="templates-panel hidden">
                 <div class="templates-categories">
                     <button class="category-btn active" data-category="people">
-                        <i class="fas fa-user"></i> Люди
+                        <i class="fas fa-user"></i>
+                        Люди
                     </button>
                     <button class="category-btn" data-category="animals">
-                        <i class="fas fa-paw"></i> Животные
+                        <i class="fas fa-paw"></i>
+                        Животные
                     </button>
                     <button class="category-btn" data-category="objects">
-                        <i class="fas fa-cube"></i> Объекты
+                        <i class="fas fa-cube"></i>
+                        Объекты
                     </button>
                     <button class="category-btn" data-category="nature">
-                        <i class="fas fa-leaf"></i> Природа
+                        <i class="fas fa-leaf"></i>
+                        Природа
                     </button>
                 </div>
-                <div class="templates-grid">
-                    <!-- Шаблоны будут добавлены через JavaScript -->
-                </div>
+                <div id="templates" class="templates-grid"></div>
             </div>
         </div>
     </div>
@@ -146,5 +156,10 @@
     </div>
 
     <script src="paint.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const paint = new Paint();
+        });
+    </script>
 </body>
 </html> 

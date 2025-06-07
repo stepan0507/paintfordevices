@@ -11,16 +11,36 @@ class Paint {
         this.zoom = 1;
         this.startX = 0;
         this.startY = 0;
-        this.textInput = document.getElementById('textInput');
-        this.textInputInput = this.textInput.querySelector('input');
-        this.textInputConfirm = this.textInput.querySelector('button');
+        this.textInput = null;
+        this.textStartX = 0;
+        this.textStartY = 0;
         this.hotkeysModal = document.getElementById('hotkeysModal');
         this.eraserSize = 20;
         this.eraserCursor = document.getElementById('eraserCursor');
         this.templatesPanel = document.getElementById('templatesPanel');
         this.templatesGrid = this.templatesPanel.querySelector('.templates-grid');
+        this.templatesButton = document.getElementById('templates');
         this.currentTemplate = null;
         this.currentColor = '#000000';
+        this.penSize = 2; // Размер ручки по умолчанию
+        this.fontSize = 20;
+        this.textSettings = document.getElementById('textSettings');
+        this.fontSizeInput = document.getElementById('fontSize');
+        this.fontSizeValue = document.getElementById('fontSizeValue');
+        this.brushSizeInput = document.getElementById('brushSize');
+        this.brushSizeValue = document.getElementById('brushSizeValue');
+        this.brushSize = 5;
+        this.textInput = document.getElementById('textInput');
+        this.textInputField = this.textInput.querySelector('input');
+        this.confirmTextButton = this.textInput.querySelector('#confirmText');
+        this.textElements = [];
+        this.selectedText = null;
+        this.isDragging = false;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+
+        console.log('Templates panel:', this.templatesPanel);
+        console.log('Templates button:', this.templatesButton);
 
         // Инициализация размеров canvas
         this.resizeCanvas();
@@ -40,6 +60,99 @@ class Paint {
 
         // Инициализация заготовок
         this.initTemplates();
+
+        // Инициализация панели заготовок
+        const templatesPanel = document.getElementById('templatesPanel');
+        const templatesButton = document.getElementById('templates');
+        let isTemplatesPanelOpen = false;
+
+        // Убедимся, что панель скрыта при запуске
+        if (templatesPanel) {
+            templatesPanel.classList.add('hidden');
+        }
+        if (templatesButton) {
+            templatesButton.classList.remove('active');
+        }
+
+        // Функция переключения панели заготовок
+        function toggleTemplatesPanel() {
+            if (!templatesPanel || !templatesButton) return;
+            
+            isTemplatesPanelOpen = !isTemplatesPanelOpen;
+            if (isTemplatesPanelOpen) {
+                templatesPanel.classList.remove('hidden');
+                templatesButton.classList.add('active');
+            } else {
+                templatesPanel.classList.add('hidden');
+                templatesButton.classList.remove('active');
+            }
+        }
+
+        // Обработчик для кнопки заготовок
+        if (templatesButton) {
+            templatesButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleTemplatesPanel();
+            });
+        }
+
+        // Обработчик клика вне панели заготовок
+        document.addEventListener('click', (e) => {
+            if (isTemplatesPanelOpen && 
+                templatesPanel && 
+                !templatesPanel.contains(e.target) && 
+                !templatesButton.contains(e.target)) {
+                toggleTemplatesPanel();
+            }
+        });
+
+        // Обработчик для горячих клавиш
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'g' || e.key === 'G') {
+                e.preventDefault();
+                toggleTemplatesPanel();
+            }
+        });
+
+        // Обработчики событий для кнопок инструментов
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tool = btn.id;
+                if (tool !== 'templates') {
+                    this.selectTool(tool);
+                    if (isTemplatesPanelOpen) {
+                        toggleTemplatesPanel();
+                    }
+                }
+            });
+        });
+
+        // Инициализация настроек текста
+        this.initTextSettings();
+
+        // Инициализация слайдера размера кисти
+        this.initBrushSizeSlider();
+
+        // Инициализация обработчиков для текстового ввода
+        this.initTextInputHandlers();
+    }
+
+    initTextInputHandlers() {
+        // Обработчик для кнопки OK
+        this.confirmTextButton.onclick = () => {
+            this.addTextToCanvas();
+        };
+
+        // Обработчик для клавиши Enter
+        this.textInputField.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.addTextToCanvas();
+            } else if (e.key === 'Escape') {
+                this.cancelTextInput();
+            }
+        };
     }
 
     initTemplates() {
@@ -423,28 +536,21 @@ class Paint {
         this.ctx.imageSmoothingQuality = 'high';
     }
 
-    setupTools() {
-        // Настройка цветового пикера
-        const colorPicker = document.getElementById('colorPicker');
-        colorPicker.addEventListener('input', (e) => {
-            this.currentColor = e.target.value;
-            this.ctx.strokeStyle = this.currentColor;
-        });
-
-        // Настройка размера кисти
-        const brushSize = document.getElementById('brushSize');
-        const sizeValue = document.getElementById('sizeValue');
-        brushSize.addEventListener('input', (e) => {
-            const size = e.target.value;
-            sizeValue.textContent = `${size}px`;
-            this.ctx.lineWidth = size;
-            this.eraserSize = size;
-            if (this.currentTool === 'eraser') {
-                this.updateEraserCursor();
+    toggleTemplatesPanel() {
+        console.log('Toggling templates panel');
+        if (this.templatesPanel) {
+            this.templatesPanel.classList.toggle('hidden');
+            if (this.templatesButton) {
+                if (!this.templatesPanel.classList.contains('hidden')) {
+                    this.templatesButton.classList.add('active');
+                } else {
+                    this.templatesButton.classList.remove('active');
+                }
             }
-        });
+        }
+    }
 
-        // Настройка инструментов
+    setupTools() {
         const tools = document.querySelectorAll('.tools button');
         tools.forEach(tool => {
             tool.addEventListener('click', () => {
@@ -462,7 +568,7 @@ class Paint {
 
                 // Показываем/скрываем панель шаблонов
                 if (this.currentTool === 'templates') {
-                    this.templatesPanel.classList.toggle('hidden');
+                    this.templatesPanel.classList.remove('hidden');
                 } else {
                     this.templatesPanel.classList.add('hidden');
                 }
@@ -478,11 +584,33 @@ class Paint {
     }
 
     setupDrawingEvents() {
-        // События мыши
-        this.canvas.addEventListener('mousedown', this.startDrawing.bind(this));
-        this.canvas.addEventListener('mousemove', this.draw.bind(this));
-        this.canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
-        this.canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
+        this.canvas.addEventListener('mousedown', (e) => {
+            if (this.currentTool === 'text') {
+                const { x, y } = this.getEventCoordinates(e);
+                this.startTextInput(x, y);
+                return;
+            }
+            this.startDrawing(e);
+        });
+
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (this.currentTool === 'eraser') {
+                this.updateEraserCursor(e);
+            }
+            if (this.isDrawing) {
+                this.draw(e);
+            }
+        });
+
+        this.canvas.addEventListener('mouseup', () => {
+            this.isDragging = false;
+            this.stopDrawing();
+        });
+
+        this.canvas.addEventListener('mouseout', () => {
+            this.isDragging = false;
+            this.stopDrawing();
+        });
 
         // События сенсорного экрана
         this.canvas.addEventListener('touchstart', (e) => {
@@ -536,9 +664,12 @@ class Paint {
         });
     }
 
-    updateEraserCursor() {
-        this.eraserCursor.style.width = `${this.eraserSize}px`;
-        this.eraserCursor.style.height = `${this.eraserSize}px`;
+    updateEraserCursor(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        this.eraserCursor.style.left = `${x}px`;
+        this.eraserCursor.style.top = `${y}px`;
     }
 
     startDrawing(e) {
@@ -559,75 +690,27 @@ class Paint {
 
     draw(e) {
         if (!this.isDrawing) return;
+        
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
 
-        const coords = this.getEventCoordinates(e);
-        const currentX = coords.x;
-        const currentY = coords.y;
-
-        switch (this.currentTool) {
-            case 'brush':
-                this.ctx.globalCompositeOperation = 'source-over';
-                this.ctx.strokeStyle = this.currentColor;
-                this.ctx.lineWidth = parseInt(document.getElementById('brushSize').value);
-                this.ctx.beginPath();
-                this.ctx.moveTo(this.lastX, this.lastY);
-                this.ctx.lineTo(currentX, currentY);
-                this.ctx.stroke();
-                break;
-
-            case 'eraser':
-                this.ctx.globalCompositeOperation = 'source-over';
-                this.ctx.strokeStyle = '#fff';
-                this.ctx.lineWidth = this.eraserSize;
-                this.ctx.beginPath();
-                this.ctx.moveTo(this.lastX, this.lastY);
-                this.ctx.lineTo(currentX, currentY);
-                this.ctx.stroke();
-                break;
-
-            case 'line':
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                this.ctx.beginPath();
-                this.ctx.moveTo(this.startX, this.startY);
-                this.ctx.lineTo(currentX, currentY);
-                this.ctx.stroke();
-                break;
-
-            case 'rectangle':
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                this.ctx.strokeRect(
-                    this.startX,
-                    this.startY,
-                    currentX - this.startX,
-                    currentY - this.startY
-                );
-                break;
-
-            case 'circle':
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                const radius = Math.sqrt(
-                    Math.pow(currentX - this.startX, 2) +
-                    Math.pow(currentY - this.startY, 2)
-                );
-                this.ctx.beginPath();
-                this.ctx.arc(this.startX, this.startY, radius, 0, Math.PI * 2);
-                this.ctx.stroke();
-                break;
-
-            case 'spray':
-                for (let i = 0; i < 50; i++) {
-                    const radius = this.ctx.lineWidth * 2;
-                    const angle = Math.random() * Math.PI * 2;
-                    const distance = Math.random() * radius;
-                    const x = currentX + Math.cos(angle) * distance;
-                    const y = currentY + Math.sin(angle) * distance;
-                    this.ctx.fillRect(x, y, 1, 1);
-                }
-                break;
+        this.ctx.beginPath();
+        
+        if (this.currentTool === 'pen') {
+            // Плавное рисование для ручки
+            this.ctx.moveTo(this.lastX, this.lastY);
+            this.ctx.lineTo(x, y);
+            this.ctx.stroke();
+        } else {
+            // Обычное рисование для других инструментов
+            this.ctx.moveTo(this.lastX, this.lastY);
+            this.ctx.lineTo(x, y);
+            this.ctx.stroke();
         }
 
-        this.lastX = currentX;
-        this.lastY = currentY;
+        this.lastX = x;
+        this.lastY = y;
     }
 
     stopDrawing() {
@@ -656,93 +739,61 @@ class Paint {
 
     setupHotkeys() {
         document.addEventListener('keydown', (e) => {
-            // Проверяем, не вводится ли текст
-            if (e.target.tagName === 'INPUT') return;
-
-            // Ctrl + Z - отменить
-            if (e.ctrlKey && e.key === 'z') {
+            if (e.key === 'b' || e.key === 'B') {
                 e.preventDefault();
-                this.undo();
-            }
-            // Ctrl + Y или Ctrl + Shift + Z - повторить
-            else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
-                e.preventDefault();
-                this.redo();
-            }
-            // Ctrl + S - сохранить
-            else if (e.ctrlKey && e.key === 's') {
-                e.preventDefault();
-                this.save();
-            }
-            // Ctrl + O - открыть
-            else if (e.ctrlKey && e.key === 'o') {
-                e.preventDefault();
-                this.load();
-            }
-            // Delete или Backspace - очистить
-            else if (e.key === 'Delete' || e.key === 'Backspace') {
-                e.preventDefault();
-                this.clear();
-            }
-            // B - кисть
-            else if (e.key === 'b') {
                 this.selectTool('brush');
-            }
-            // E - ластик
-            else if (e.key === 'e') {
+            } else if (e.key === 'e' || e.key === 'E') {
+                e.preventDefault();
                 this.selectTool('eraser');
-            }
-            // L - линия
-            else if (e.key === 'l') {
-                this.selectTool('line');
-            }
-            // R - прямоугольник
-            else if (e.key === 'r') {
-                this.selectTool('rectangle');
-            }
-            // C - круг
-            else if (e.key === 'c') {
-                this.selectTool('circle');
-            }
-            // T - текст
-            else if (e.key === 't') {
+            } else if (e.key === 't' || e.key === 'T') {
+                e.preventDefault();
                 this.selectTool('text');
-            }
-            // F - заливка
-            else if (e.key === 'f') {
-                this.selectTool('fill');
-            }
-            // S - распылитель
-            else if (e.key === 's') {
-                this.selectTool('spray');
-            }
-            // [ - уменьшить размер кисти
-            else if (e.key === '[') {
-                this.changeBrushSize(-1);
-            }
-            // ] - увеличить размер кисти
-            else if (e.key === ']') {
-                this.changeBrushSize(1);
+            } else if (e.key === 'p' || e.key === 'P') {
+                e.preventDefault();
+                this.selectTool('pen');
+            } else if (e.key === 'g' || e.key === 'G') {
+                e.preventDefault();
+                toggleTemplatesPanel();
+            } else if (e.key === 'c' || e.key === 'C') {
+                e.preventDefault();
+                this.clearCanvas();
+            } else if (e.key === 's' || e.key === 'S') {
+                e.preventDefault();
+                this.saveCanvas();
             }
         });
     }
 
-    selectTool(toolId) {
-        const tools = document.querySelectorAll('.tools button');
-        tools.forEach(tool => {
-            if (tool.id === toolId) {
-                tool.classList.add('active');
-                this.currentTool = toolId;
-                if (toolId === 'eraser') {
-                    this.eraserCursor.style.display = 'block';
-                    this.updateEraserCursor();
-                } else {
-                    this.eraserCursor.style.display = 'none';
-                }
-            } else {
-                tool.classList.remove('active');
-            }
+    selectTool(tool) {
+        this.currentTool = tool;
+        
+        // Сбрасываем выбранный текст при смене инструмента
+        if (tool !== 'text') {
+            this.selectedText = null;
+            this.redrawCanvas();
+        }
+
+        // Обновляем активную кнопку
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.id === tool);
         });
+
+        // Настраиваем курсор
+        if (tool === 'eraser') {
+            this.ctx.globalCompositeOperation = 'destination-out';
+            this.canvas.style.cursor = 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewport=\'0 0 100 100\' style=\'fill:black;font-size:24px;\'><text y=\'20\'>🧹</text></svg>") 0 24, auto';
+            this.ctx.lineWidth = this.brushSize;
+            if (this.textSettings) {
+                this.textSettings.classList.add('hidden');
+            }
+        } else {
+            this.ctx.globalCompositeOperation = 'source-over';
+            this.canvas.style.cursor = tool === 'text' ? 'text' : 'crosshair';
+            this.ctx.lineWidth = this.brushSize;
+            if (this.textSettings) {
+                this.textSettings.classList.toggle('hidden', tool !== 'text');
+            }
+        }
     }
 
     changeBrushSize(delta) {
@@ -819,6 +870,168 @@ class Paint {
             reader.readAsDataURL(file);
         };
         input.click();
+    }
+
+    handleMouseDown(e) {
+        this.isDrawing = true;
+        const rect = this.canvas.getBoundingClientRect();
+        this.lastX = e.clientX - rect.left;
+        this.lastY = e.clientY - rect.top;
+
+        if (this.currentTool === 'text') {
+            this.startTextInput(this.lastX, this.lastY);
+        }
+    }
+
+    startTextInput(x, y) {
+        // Сохраняем координаты начала ввода текста
+        this.textStartX = x;
+        this.textStartY = y;
+        
+        // Позиционируем поле ввода текста
+        this.textInput.style.left = `${x}px`;
+        this.textInput.style.top = `${y}px`;
+        
+        // Показываем поле ввода
+        this.textInput.classList.remove('hidden');
+        
+        // Устанавливаем размер шрифта
+        this.textInputField.style.fontSize = `${this.fontSize}px`;
+        
+        // Очищаем поле ввода
+        this.textInputField.value = '';
+        
+        // Фокусируемся на поле ввода
+        this.textInputField.focus();
+    }
+
+    addTextToCanvas() {
+        const text = this.textInputField.value.trim();
+        if (!text) {
+            this.cancelTextInput();
+            return;
+        }
+
+        // Сохраняем текущее состояние холста
+        this.saveState();
+
+        // Настраиваем контекст для текста
+        this.ctx.font = `${this.fontSize}px Arial`;
+        this.ctx.fillStyle = this.currentColor;
+        this.ctx.textBaseline = 'top';
+
+        // Рисуем текст
+        this.ctx.fillText(text, this.textStartX, this.textStartY);
+
+        // Очищаем поле ввода и скрываем его
+        this.textInputField.value = '';
+        this.textInput.classList.add('hidden');
+    }
+
+    cancelTextInput() {
+        this.textInputField.value = '';
+        this.textInput.classList.add('hidden');
+    }
+
+    initTextSettings() {
+        if (!this.fontSizeInput || !this.fontSizeValue) return;
+
+        // Устанавливаем начальное значение
+        this.fontSizeInput.value = this.fontSize;
+        this.updateFontSizeDisplay();
+
+        // Добавляем обработчик изменения размера шрифта
+        this.fontSizeInput.addEventListener('input', () => {
+            this.fontSize = parseInt(this.fontSizeInput.value);
+            this.updateFontSizeDisplay();
+            
+            // Обновляем размер шрифта в поле ввода, если оно активно
+            if (this.textInputField && !this.textInput.classList.contains('hidden')) {
+                this.textInputField.style.fontSize = `${this.fontSize}px`;
+            }
+        });
+    }
+
+    updateFontSizeDisplay() {
+        if (this.fontSizeValue) {
+            this.fontSizeValue.textContent = `${this.fontSize}px`;
+        }
+    }
+
+    initBrushSizeSlider() {
+        if (this.brushSizeInput && this.brushSizeValue) {
+            // Устанавливаем начальное значение
+            this.brushSizeInput.value = this.brushSize;
+            this.updateBrushSizeDisplay();
+
+            // Обработчик изменения размера кисти
+            this.brushSizeInput.addEventListener('input', (e) => {
+                const newSize = parseInt(e.target.value);
+                if (!isNaN(newSize) && newSize >= 1 && newSize <= 50) {
+                    this.brushSize = newSize;
+                    this.updateBrushSizeDisplay();
+                    this.ctx.lineWidth = this.brushSize;
+                }
+            });
+        }
+    }
+
+    updateBrushSizeDisplay() {
+        if (this.brushSizeValue) {
+            this.brushSizeValue.textContent = `${this.brushSize}px`;
+        }
+    }
+
+    redrawCanvas() {
+        // Очищаем холст
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Восстанавливаем последнее состояние
+        if (this.history.length > 0) {
+            const lastState = this.history[this.historyIndex];
+            if (lastState) {
+                this.ctx.putImageData(lastState, 0, 0);
+            }
+        }
+
+        // Рисуем все текстовые элементы
+        this.textElements.forEach(element => {
+            this.ctx.font = `${element.fontSize}px Arial`;
+            this.ctx.fillStyle = element.color;
+            this.ctx.textBaseline = 'top';
+            this.ctx.fillText(element.text, element.x, element.y);
+
+            // Если это выбранный элемент, рисуем рамку
+            if (element === this.selectedText) {
+                const metrics = this.ctx.measureText(element.text);
+                this.ctx.strokeStyle = '#4CAF50';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(
+                    element.x - 2,
+                    element.y - 2,
+                    metrics.width + 4,
+                    element.fontSize + 4
+                );
+            }
+        });
+    }
+
+    findTextAtPosition(x, y) {
+        // Проверяем каждый текстовый элемент
+        for (let i = this.textElements.length - 1; i >= 0; i--) {
+            const element = this.textElements[i];
+            this.ctx.font = `${element.fontSize}px Arial`;
+            const metrics = this.ctx.measureText(element.text);
+            
+            // Проверяем, находится ли точка в пределах текста
+            if (x >= element.x && 
+                x <= element.x + metrics.width &&
+                y >= element.y && 
+                y <= element.y + element.fontSize) {
+                return element;
+            }
+        }
+        return null;
     }
 }
 

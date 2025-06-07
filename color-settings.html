@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройка цветов кота</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Панель настройки цветов -->
+    <div class="color-settings">
+        <h3>Настройка цветов кота</h3>
+        
+        <div class="color-option">
+            <label for="body-color">Цвет тела</label>
+            <input type="color" id="body-color" value="#f8f9fa">
+        </div>
+        
+        <div class="color-option">
+            <label for="ear-color">Цвет ушей</label>
+            <input type="color" id="ear-color" value="#ffc9c9">
+        </div>
+        
+        <div class="color-option">
+            <label for="eye-color">Цвет глаз</label>
+            <input type="color" id="eye-color" value="#212529">
+        </div>
+        
+        <div class="color-option">
+            <label for="nose-color">Цвет носа</label>
+            <input type="color" id="nose-color" value="#ff6b6b">
+        </div>
+        
+        <div class="color-option">
+            <label for="whisker-color">Цвет усов</label>
+            <input type="color" id="whisker-color" value="#495057">
+        </div>
+        
+        <button class="save-colors">Сохранить настройки</button>
+        <button class="reset-colors">Сбросить настройки</button>
+    </div>
+
+    <!-- Кнопка открытия/закрытия панели -->
+    <button class="color-settings-toggle">🎨</button>
+
+    <script>
+        // Функционал для панели настройки цветов
+        document.addEventListener('DOMContentLoaded', function() {
+            const colorSettings = document.querySelector('.color-settings');
+            const toggleButton = document.querySelector('.color-settings-toggle');
+            const saveButton = document.querySelector('.save-colors');
+            const resetButton = document.querySelector('.reset-colors');
+            
+            // Открытие/закрытие панели
+            toggleButton.addEventListener('click', () => {
+                colorSettings.classList.toggle('active');
+            });
+            
+            // Сохранение настроек
+            saveButton.addEventListener('click', () => {
+                const colors = {
+                    body: document.getElementById('body-color').value,
+                    ear: document.getElementById('ear-color').value,
+                    eye: document.getElementById('eye-color').value,
+                    nose: document.getElementById('nose-color').value,
+                    whisker: document.getElementById('whisker-color').value
+                };
+                
+                // Применяем цвета к коту
+                document.documentElement.style.setProperty('--cat-body-color', colors.body);
+                document.documentElement.style.setProperty('--cat-ear-color', colors.ear);
+                document.documentElement.style.setProperty('--cat-eye-color', colors.eye);
+                document.documentElement.style.setProperty('--cat-nose-color', colors.nose);
+                document.documentElement.style.setProperty('--cat-whisker-color', colors.whisker);
+                
+                // Сохраняем настройки в localStorage
+                localStorage.setItem('catColors', JSON.stringify(colors));
+                
+                // Показываем уведомление
+                alert('Настройки сохранены!');
+            });
+            
+            // Сброс настроек
+            resetButton.addEventListener('click', () => {
+                document.getElementById('body-color').value = '#f8f9fa';
+                document.getElementById('ear-color').value = '#ffc9c9';
+                document.getElementById('eye-color').value = '#212529';
+                document.getElementById('nose-color').value = '#ff6b6b';
+                document.getElementById('whisker-color').value = '#495057';
+                
+                // Сбрасываем цвета к значениям по умолчанию
+                document.documentElement.style.removeProperty('--cat-body-color');
+                document.documentElement.style.removeProperty('--cat-ear-color');
+                document.documentElement.style.removeProperty('--cat-eye-color');
+                document.documentElement.style.removeProperty('--cat-nose-color');
+                document.documentElement.style.removeProperty('--cat-whisker-color');
+                
+                // Удаляем настройки из localStorage
+                localStorage.removeItem('catColors');
+            });
+            
+            // Загрузка сохраненных настроек
+            const savedColors = localStorage.getItem('catColors');
+            if (savedColors) {
+                const colors = JSON.parse(savedColors);
+                document.getElementById('body-color').value = colors.body;
+                document.getElementById('ear-color').value = colors.ear;
+                document.getElementById('eye-color').value = colors.eye;
+                document.getElementById('nose-color').value = colors.nose;
+                document.getElementById('whisker-color').value = colors.whisker;
+                
+                // Применяем сохраненные цвета
+                document.documentElement.style.setProperty('--cat-body-color', colors.body);
+                document.documentElement.style.setProperty('--cat-ear-color', colors.ear);
+                document.documentElement.style.setProperty('--cat-eye-color', colors.eye);
+                document.documentElement.style.setProperty('--cat-nose-color', colors.nose);
+                document.documentElement.style.setProperty('--cat-whisker-color', colors.whisker);
+            }
+        });
+    </script>
+</body>
+</html> 
