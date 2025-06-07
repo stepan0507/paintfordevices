@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Paint</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="toolbar">
+            <div class="tool-group">
+                <div class="tools">
+                    <button id="brush" class="active" title="Кисть"><i class="fas fa-paint-brush"></i></button>
+                    <button id="eraser" title="Ластик"><i class="fas fa-eraser"></i></button>
+                    <button id="line" title="Линия"><i class="fas fa-minus"></i></button>
+                    <button id="rectangle" title="Прямоугольник"><i class="far fa-square"></i></button>
+                    <button id="circle" title="Круг"><i class="far fa-circle"></i></button>
+                    <button id="spray" title="Распылитель"><i class="fas fa-spray-can"></i></button>
+                    <button id="text" title="Текст"><i class="fas fa-font"></i></button>
+                    <button id="templates" title="Шаблоны"><i class="fas fa-shapes"></i></button>
+                    <button id="fill" title="Заливка"><i class="fas fa-fill-drip"></i></button>
+                    <button id="select" title="Выделение"><i class="fas fa-crop"></i></button>
+                    <button id="move" title="Перемещение"><i class="fas fa-arrows-alt"></i></button>
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <input type="color" id="colorPicker" title="Выбрать цвет">
+                <div class="size-control">
+                    <input type="range" id="brushSize" min="1" max="50" value="5" title="Размер кисти">
+                    <span id="sizeValue">5px</span>
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <button id="undo" title="Отменить"><i class="fas fa-undo"></i></button>
+                <button id="redo" title="Повторить"><i class="fas fa-redo"></i></button>
+                <button id="clear" title="Очистить"><i class="fas fa-trash"></i></button>
+                <button id="save" title="Сохранить"><i class="fas fa-save"></i></button>
+                <button id="load" title="Загрузить"><i class="fas fa-folder-open"></i></button>
+                <button id="hotkeys" title="Горячие клавиши"><i class="fas fa-keyboard"></i></button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="canvas"></canvas>
+                <div id="eraserCursor" class="eraser-cursor"></div>
+                <div id="textInput" class="hidden">
+                    <input type="text" placeholder="Введите текст...">
+                    <button id="confirmText">OK</button>
+                </div>
+            </div>
+
+            <div id="templatesPanel" class="templates-panel hidden">
+                <div class="templates-categories">
+                    <button class="category-btn active" data-category="people">
+                        <i class="fas fa-user"></i> Люди
+                    </button>
+                    <button class="category-btn" data-category="animals">
+                        <i class="fas fa-paw"></i> Животные
+                    </button>
+                    <button class="category-btn" data-category="objects">
+                        <i class="fas fa-cube"></i> Объекты
+                    </button>
+                    <button class="category-btn" data-category="nature">
+                        <i class="fas fa-leaf"></i> Природа
+                    </button>
+                </div>
+                <div class="templates-grid">
+                    <!-- Шаблоны будут добавлены через JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="hotkeysModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Горячие клавиши</h2>
+            <div class="hotkeys-list">
+                <div class="hotkey-item">
+                    <span class="key">Ctrl + Z</span>
+                    <span class="description">Отменить</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">Ctrl + Y</span>
+                    <span class="description">Повторить</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">Ctrl + S</span>
+                    <span class="description">Сохранить</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">Ctrl + O</span>
+                    <span class="description">Открыть</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">Delete</span>
+                    <span class="description">Очистить</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">B</span>
+                    <span class="description">Кисть</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">E</span>
+                    <span class="description">Ластик</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">L</span>
+                    <span class="description">Линия</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">R</span>
+                    <span class="description">Прямоугольник</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">C</span>
+                    <span class="description">Круг</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">T</span>
+                    <span class="description">Текст</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">F</span>
+                    <span class="description">Заливка</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">S</span>
+                    <span class="description">Распылитель</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">[</span>
+                    <span class="description">Уменьшить размер кисти</span>
+                </div>
+                <div class="hotkey-item">
+                    <span class="key">]</span>
+                    <span class="description">Увеличить размер кисти</span>
+                </div>
+            </div>
+            <button class="close-modal">&times;</button>
+        </div>
+    </div>
+
+    <script src="paint.js"></script>
+</body>
+</html> 
